@@ -5,10 +5,10 @@ function App() {
   const [filmes, setFilmes] = useState([]);
 
   const buscarFilmes = async () => {
-  const res = await fetch(`http://www.omdbapi.com/?apikey=27078fa9&s=${query}`);
-  const data = await res.json();
-  setFilmes(data.Search || []);
-};
+    const res = await fetch(`http://www.omdbapi.com/?apikey=27078fa9&s=${query}`);
+    const data = await res.json();
+    setFilmes(data.Search || []);
+  };
 
   return (
     <div style={{ padding: "20px" }}>
