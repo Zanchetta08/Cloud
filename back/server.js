@@ -1,44 +1,49 @@
 const express = require("express");
 const mysql = require("mysql2/promise");
-const fetch = require("node-fetch");
 const cors = require("cors");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Conexão MySQL
 (async () => {
+  // Conexão MySQL
   const db = await mysql.createConnection({
-    host: "192.168.31.129",
-    user: "user",
-    password: "123",
+    host: "192.168.31.129", // IP da VM do MySQL
+    user: "user",           // usuário que você criou
+    password: "123",        // senha do usuário
     database: "meu_banco"
   });
 
-  // Rota de busca de filmes
-  app.get("/api/search", async (req, res) => {
-    const query = req.query.q;
-    if (!query) return res.status(400).json({ error: "Faltou parâmetro q" });
+  console.log("✅ Conectado ao MySQL");
 
+  // Rota para SALVAR filmes (frontend envia via POST)
+  app.post("/api/save", async (req, res) => {
     try {
-      const response = await fetch(`http://www.omdbapi.com/?apikey=27078fa9&s=${query}`);
-      const data = await response.json();
-
-      if (data.Search) {
-        for (let f of data.Search) {
-          await db.execute(
-            "INSERT INTO filmes (titulo, ano, poster) VALUES (?, ?, ?)",
-            [f.Title, f.Year, f.Poster]
-          );
-        }
+      const filmes = req.body;
+      for (let f of filmes) {
+        await db.execute(
+          "INSERT INTO filmes (titulo, ano, poster) VALUES (?, ?, ?)",
+          [f.Title, f.Year, f.Poster]
+        );
       }
-
-      res.json(data.Search || []);
+      res.json({ message: "Filmes salvos no banco" });
     } catch (err) {
-      res.status(500).json({ error: "Erro na busca" });
+      console.error("Erro ao salvar filmes:", err);
+      res.status(500).json({ error: "Erro ao salvar filmes" });
     }
   });
 
-  app.listen(3000, () => console.log("Back rodando na porta 3000"));
+  // Rota para LISTAR filmes já salvos
+  app.get("/api/filmes", async (req, res) => {
+    try {
+      const [rows] = await db.execute("SELECT * FROM filmes");
+      res.json(rows);
+    } catch (err) {
+      console.error("Erro ao buscar filmes:", err);
+      res.status(500).json({ error: "Erro ao buscar filmes" });
+    }
+  });
+
+  app.listen(3000, () => console.log("🚀 Back rodando na porta 3000"));
 })();
